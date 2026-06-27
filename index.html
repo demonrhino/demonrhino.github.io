@@ -13,28 +13,215 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            background-color: #111; /* Dark background color */
+            background-color: #111;
+            overflow: hidden;
         }
-        /* Applied styles to the link container to keep layout consistent */
-        a {
+
+        .flip-container {
+            width: 80vmin;
+            height: 80vmin;
+            perspective: 1000px;
+            position: relative;
+        }
+
+        .flipper {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .flipper.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .front, .back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            width: 100%;
-            height: 100%;
+        }
+
+        .front {
+            z-index: 2;
+            transform: rotateY(0deg);
             cursor: pointer;
         }
-        img {
-            max-width: 100%;
-            max-height: 100%;
+
+        .front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .back {
+            transform: rotateY(180deg);
+            background: #fff;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .back img {
+            width: 100%;
+            height: 100%;
             object-fit: contain;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .bum-text {
+            position: absolute;
+            z-index: 2;
+            color: #3d1f1f;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: clamp(0.9rem, 3vmin, 1.6rem);
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.5;
+            /* Position text emerging from the bum crack area */
+            top: 58%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-shadow: 
+                0 0 4px rgba(255,255,255,0.9),
+                0 0 8px rgba(255,255,255,0.7),
+                0 0 12px rgba(255,255,255,0.5),
+                0 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            pointer-events: none;
+            animation: emerge 0.8s ease-out;
+        }
+
+        @keyframes emerge {
+            0% {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px) scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 20px;
+            color: #666;
+            font-family: sans-serif;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .flip-container:hover .hint {
+            opacity: 1;
         }
     </style>
 </head>
 <body>
-    <!-- The image is now wrapped in a link pointing to GitHub -->
-    <a href="https://github.com/demonrhino" target="_blank">
-        <img src="potatoooooo.png" alt="potatoooooo">
-    </a>
+    <div class="flip-container" id="flipContainer">
+        <div class="flipper" id="flipper">
+            <div class="front" id="front">
+                <img src="potatoooooo.png" alt="potatoooooo">
+            </div>
+            <div class="back" id="back">
+                <img src="Gemini_Generated_Image_z2byk3z2byk3z2by-clean-Photoroom.png" alt="potato bum">
+                <div class="bum-text" id="bumText">I make TASes, other stuff<br>and I'm a potato</div>
+            </div>
+        </div>
+        <div class="hint">Long press to flip • Tap to visit GitHub</div>
+    </div>
+
+    <script>
+        const flipper = document.getElementById('flipper');
+        const front = document.getElementById('front');
+        const back = document.getElementById('back');
+        const bumText = document.getElementById('bumText');
+        let longPressTimer;
+        let isLongPress = false;
+        let isFlipped = false;
+        const LONG_PRESS_DURATION = 500;
+
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        function retriggerAnimation() {
+            // Remove and re-add to restart animation
+            bumText.style.animation = 'none';
+            bumText.offsetHeight; // trigger reflow
+            bumText.style.animation = 'emerge 0.8s ease-out';
+        }
+
+        function startLongPress(e) {
+            if (e.type === 'mousedown' && e.button !== 0) return;
+            
+            isLongPress = false;
+            longPressTimer = setTimeout(() => {
+                isLongPress = true;
+                isFlipped = !isFlipped;
+                flipper.classList.toggle('flipped', isFlipped);
+                if (isFlipped) {
+                    setTimeout(retriggerAnimation, 300);
+                }
+                if (navigator.vibrate) navigator.vibrate(50);
+            }, LONG_PRESS_DURATION);
+        }
+
+        function endLongPress(e) {
+            clearTimeout(longPressTimer);
+        }
+
+        function handleClick(e) {
+            if (isLongPress) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+            }
+            
+            if (isFlipped) {
+                e.preventDefault();
+                isFlipped = false;
+                flipper.classList.remove('flipped');
+                setTimeout(() => {
+                    window.open('https://github.com/demonrhino', '_blank');
+                }, 300);
+                return;
+            }
+            
+            window.open('https://github.com/demonrhino', '_blank');
+        }
+
+        // Mouse events
+        front.addEventListener('mousedown', startLongPress);
+        front.addEventListener('mouseup', endLongPress);
+        front.addEventListener('mouseleave', endLongPress);
+        front.addEventListener('click', handleClick);
+
+        // Touch events
+        front.addEventListener('touchstart', (e) => {
+            startLongPress(e);
+        }, { passive: true });
+        front.addEventListener('touchend', (e) => {
+            endLongPress(e);
+            if (!isLongPress && !isFlipped) {
+                e.preventDefault();
+                window.open('https://github.com/demonrhino', '_blank');
+            } else if (isLongPress) {
+                e.preventDefault();
+            }
+        });
+        front.addEventListener('touchmove', endLongPress);
+    </script>
 </body>
 </html>
