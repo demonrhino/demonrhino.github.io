@@ -64,7 +64,7 @@
 
         .back {
             transform: rotateY(180deg);
-            background: #fff;
+            background: transparent;
             position: relative;
             cursor: pointer;
         }
@@ -82,30 +82,44 @@
         .bum-text {
             position: absolute;
             z-index: 2;
-            color: #3d1f1f;
+            color: #2a0a0a;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             font-size: clamp(0.9rem, 3vmin, 1.6rem);
-            font-weight: 700;
+            font-weight: 800;
             text-align: center;
             line-height: 1.5;
-            /* Position text emerging from the bum crack area */
+            /* Start hidden inside the crack */
             top: 58%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) translateY(40px) scale(0.3);
+            opacity: 0;
             text-shadow: 
-                0 0 4px rgba(255,255,255,0.9),
-                0 0 8px rgba(255,255,255,0.7),
-                0 0 12px rgba(255,255,255,0.5),
-                0 1px 2px rgba(0,0,0,0.3);
+                0 0 3px rgba(255,255,255,0.8),
+                0 0 6px rgba(255,255,255,0.5),
+                0 1px 2px rgba(0,0,0,0.4);
             white-space: nowrap;
             pointer-events: none;
-            animation: emerge 0.8s ease-out;
         }
 
-        @keyframes emerge {
+        .bum-text.animate {
+            animation: squeezeOut 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes squeezeOut {
             0% {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px) scale(0.8);
+                transform: translateX(-50%) translateY(40px) scale(0.3);
+            }
+            30% {
+                opacity: 0.6;
+                transform: translateX(-50%) translateY(25px) scale(0.5);
+            }
+            60% {
+                opacity: 1;
+                transform: translateX(-50%) translateY(5px) scale(0.9);
+            }
+            80% {
+                transform: translateX(-50%) translateY(-5px) scale(1.05);
             }
             100% {
                 opacity: 1;
@@ -136,7 +150,7 @@
                 <img src="potatoooooo.png" alt="potatoooooo">
             </div>
             <div class="back" id="back">
-                <img src="potatoass.png" alt="potato's ass">
+                <img src="potatoass.png" alt="potato's ass crack, lovely">
                 <div class="bum-text" id="bumText">I make TASes, other stuff<br>and I'm a potato</div>
             </div>
         </div>
@@ -146,21 +160,22 @@
     <script>
         const flipper = document.getElementById('flipper');
         const front = document.getElementById('front');
-        const back = document.getElementById('back');
         const bumText = document.getElementById('bumText');
         let longPressTimer;
         let isLongPress = false;
         let isFlipped = false;
         const LONG_PRESS_DURATION = 500;
 
-        // Prevent context menu on long press
         document.addEventListener('contextmenu', (e) => e.preventDefault());
 
-        function retriggerAnimation() {
-            // Remove and re-add to restart animation
-            bumText.style.animation = 'none';
-            bumText.offsetHeight; // trigger reflow
-            bumText.style.animation = 'emerge 0.8s ease-out';
+        function triggerSqueeze() {
+            bumText.classList.remove('animate');
+            void bumText.offsetWidth; // force reflow
+            bumText.classList.add('animate');
+        }
+
+        function resetText() {
+            bumText.classList.remove('animate');
         }
 
         function startLongPress(e) {
@@ -172,7 +187,9 @@
                 isFlipped = !isFlipped;
                 flipper.classList.toggle('flipped', isFlipped);
                 if (isFlipped) {
-                    setTimeout(retriggerAnimation, 300);
+                    setTimeout(triggerSqueeze, 400);
+                } else {
+                    resetText();
                 }
                 if (navigator.vibrate) navigator.vibrate(50);
             }, LONG_PRESS_DURATION);
@@ -193,6 +210,7 @@
                 e.preventDefault();
                 isFlipped = false;
                 flipper.classList.remove('flipped');
+                resetText();
                 setTimeout(() => {
                     window.open('https://github.com/demonrhino', '_blank');
                 }, 300);
